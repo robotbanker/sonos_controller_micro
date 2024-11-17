@@ -167,9 +167,13 @@ def play_pause(ip):
         print(f"Transport state is '{transport_state}'. No action taken.")
         return None
 
-def get_album_image_url(ip):
+def get_artist_and_song(ip):
     """
-    Retrieves the album image URL for the currently playing track.
+    Retrieves the artist name and song name for the currently playing track.
+
+    Returns:
+        dict: A dictionary containing the artist name and song name.
+              Example: {"artist": "Artist Name", "song": "Song Name"}
     """
     # Prepare the required arguments for GetPositionInfo
     arguments = """
@@ -192,26 +196,31 @@ def get_album_image_url(ip):
         # Decode the metadata (convert HTML entities to actual characters)
         track_metadata = track_metadata.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&amp;", "&")
 
-        # Locate the <upnp:albumArtURI> tag in the metadata
-        uri_start = track_metadata.find('<upnp:albumArtURI>')
-        uri_end = track_metadata.find('</upnp:albumArtURI>')
-        if uri_start != -1 and uri_end != -1:
-            uri_start += len('<upnp:albumArtURI>')
-            album_art_url = track_metadata[uri_start:uri_end].strip()
+        # Initialize the result dictionary
+        result = {"artist": None, "song": None}
 
-            # If the URL is valid, return it
-            if album_art_url.startswith("https"):
-                print (album_art_url)
-                return album_art_url
-            else:
-                print("Invalid album art URI format.")
-                return None
-        else:
-            print("Album art URI not found in metadata.")
-            return None
+        # Locate the <dc:title> tag in the metadata for the song name
+        title_start = track_metadata.find('<dc:title>')
+        title_end = track_metadata.find('</dc:title>')
+        if title_start != -1 and title_end != -1:
+            title_start += len('<dc:title>')
+            result["song"] = track_metadata[title_start:title_end].strip()
+
+        # Locate the <dc:creator> tag in the metadata for the artist name
+        creator_start = track_metadata.find('<dc:creator>')
+        creator_end = track_metadata.find('</dc:creator>')
+        if creator_start != -1 and creator_end != -1:
+            creator_start += len('<dc:creator>')
+            result["artist"] = track_metadata[creator_start:creator_end].strip()
+
+        # Print and return the results
+        print(f"Artist: {result['artist']}")
+        print(f"Song: {result['song']}")
+        return result
     else:
         print("Error retrieving track metadata:", response)
         return None
+
 
 def get_sonos_speaker_name(ip):
     """
@@ -831,7 +840,6 @@ class LCD_1inch3(framebuf.FrameBuffer):
 
         self.show()
 
-
 if __name__=='__main__':
     pwm = PWM(Pin(BL))
     pwm.freq(1000)
@@ -842,7 +850,6 @@ if __name__=='__main__':
     LCD.fill(LCD.black)
     LCD.show()
     prompt1=f"Connect to {SSID}..."
-
     LCD.draw_scaled_text(prompt1,10,10,LCD.white,scale=2)
     LCD.show()
     time.sleep(2)
@@ -884,11 +891,9 @@ if __name__=='__main__':
             
         if(keyX.value() == 0):
             pass
-  
             
         if(keyY.value() == 0):
             pass
-
             
         if(up.value() == 0):
             set_volume_up(sonos_ip,get_current_volume(sonos_ip))
@@ -906,13 +911,11 @@ if __name__=='__main__':
         if(left.value() == 0):
             skip_to_prev_song(sonos_ip)
             LCD.display_skip_to_previous_sign()
-            get_album_image_url(sonos_ip)
-            time.sleep(0.1)
+            time.sleep(1)
         
         if(right.value() == 0):
             skip_to_next_song(sonos_ip)
             LCD.display_skip_to_next_sign()
-            LCD.draw_scaled_text(get_album_image_url (sonos_ip),10,10,LCD.white,scale=2)
             time.sleep(1)
         
         if(ctrl.value() == 0):
