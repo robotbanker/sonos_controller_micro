@@ -6,9 +6,9 @@ import urequests
 import framebuf
 import math
 
-# Wi-Fi credentials
-SSID = "Pengussini Home 2.4Ghz"
-PASSWORD = 'Puzzadipiedi89!'
+# Wi-Fi credentials: place below SSID and Pwd for your local Wifi Connection
+SSID = ""
+PASSWORD = ''
 
 BL = 13
 DC = 8
